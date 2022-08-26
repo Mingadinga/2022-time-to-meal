@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 public class Member extends BaseTimeEntity implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long memberPk;
 
     @Column(length = 20, nullable = false)
     private String memberId;
@@ -37,6 +37,9 @@ public class Member extends BaseTimeEntity implements UserDetails {
     @ElementCollection(fetch = FetchType.EAGER)
     @Builder.Default
     private List<String> roles = new ArrayList<>();
+
+    @OneToOne(cascade = CascadeType.REMOVE, mappedBy = "member")
+    private MemberProfileImg memberProfileImg;
 
     @Builder
     public Member(String memberId, String name, String password){
@@ -55,7 +58,7 @@ public class Member extends BaseTimeEntity implements UserDetails {
 
     @Override
     public String getUsername() {
-        return String.valueOf(this.id);
+        return String.valueOf(this.memberPk);
     }
 
     @Override

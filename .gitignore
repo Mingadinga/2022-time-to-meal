@@ -39,3 +39,4 @@ out/
 .vscode/
 /src/main/resources/real-db.properties
 /src/main/resources/application-test.properties
+/src/main/resources/application-dev.properties

@@ -2,9 +2,8 @@ package com.team20.t4.member;
 
 import com.team20.t4.common.exception.RequestErrorCode;
 import com.team20.t4.common.exception.RequestException;
-import com.team20.t4.member.domain.Member;
-import com.team20.t4.member.domain.MemberRepository;
-import com.team20.t4.member.domain.RefreshToken;
+import com.team20.t4.common.s3.S3Util;
+import com.team20.t4.member.domain.*;
 import com.team20.t4.member.dto.MemberInfoResponseDto;
 import com.team20.t4.member.dto.MemberLoginRequestDto;
 import com.team20.t4.member.dto.MemberSaveRequestDto;
@@ -20,15 +19,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Optional;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class MemberService {
     public final MemberRepository memberRepository;
+    private final MemberProfileImgRepository memberProfileImgRepository;
     private final PasswordEncoder pwdEncorder;
     private final JwtProvider jwtProvider;
     private final RefreshTokenService refreshTokenService;
+    private final S3Util s3Util;
 
     public Member getLoginedMember(){
         return SecurityUtil.getCurrentUserPk().flatMap(memberRepository::findById)
@@ -64,7 +68,7 @@ public class MemberService {
     }
 
     private TokenDto createTokenDtoAndUpdateRefreshTokenValue(Member validMember) throws RequestException {
-        String accessToken = jwtProvider.createAccessToken(validMember.getId(), validMember.getRoles());
+        String accessToken = jwtProvider.createAccessToken(validMember.getMemberPk(), validMember.getRoles());
         String refreshToken = refreshTokenService.updateRefreshToken(validMember);
         return new TokenDto(accessToken, refreshToken);
     }
@@ -78,7 +82,7 @@ public class MemberService {
         RefreshToken foundRefreshToken = refreshTokenService.findRefreshTokenByUserOrElseThrows(requestedMember);
         checkRequestedRefreshTokenMatchesToFoundRefreshToken(requestedRefreshToken, foundRefreshToken);
 
-        String accessToken = jwtProvider.createAccessToken(requestedMember.getId(), requestedMember.getRoles());
+        String accessToken = jwtProvider.createAccessToken(requestedMember.getMemberPk(), requestedMember.getRoles());
         String refreshToken = refreshTokenService.updateRefreshToken(requestedMember);
 
         return new TokenDto(accessToken, refreshToken);
@@ -115,12 +119,40 @@ public class MemberService {
 
     @Transactional
     public MemberInfoResponseDto getMemberInfo(){
-        return MemberInfoResponseDto.of(getLoginedMember());
+        Member loginedMember = getLoginedMember();
+        return MemberInfoResponseDto.toDtoWithProfileImage(loginedMember, getImgUrl(loginedMember));
+    }
+
+    private String getImgUrl(Member loginedMember) {
+        Optional<MemberProfileImg> optionalMemberProfileImg = memberProfileImgRepository.findByMember(loginedMember);
+        String imgUrl;
+        if(optionalMemberProfileImg.isEmpty()){
+            imgUrl = s3Util.getUrl("member-profile-image/유튜브_기본프로필_하늘색.jpg");
+        }
+        else{
+            imgUrl = s3Util.getUrl(optionalMemberProfileImg.get().getFileKey());
+        }
+        return imgUrl;
     }
 
     @Transactional
     public void updateMemberName(String newName){
         getLoginedMember().updateName(newName);
+    }
+
+    @Transactional
+    public void updateMemberProfileImg(MultipartFile multipartFile){
+        Member loginedMember = getLoginedMember();
+        Optional<MemberProfileImg> optionalMemberProfileImg = memberProfileImgRepository.findByMember(loginedMember);
+        if(optionalMemberProfileImg.isEmpty()){
+            String imgUrl = s3Util.uploadFileV1("member-profile-image", multipartFile);
+            memberProfileImgRepository.save(MemberProfileImg.builder().member(loginedMember).fileKey(imgUrl).build());
+        }
+        else{
+            String uploadedFileKey = s3Util.updateFile(optionalMemberProfileImg.get().getFileKey(), "member-profile-image", multipartFile);
+            optionalMemberProfileImg.get().updateFileKey(uploadedFileKey);
+        }
+
     }
 
 }

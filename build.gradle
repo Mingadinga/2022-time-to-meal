@@ -45,6 +45,9 @@ dependencies {
 
 	// h2
 	implementation 'com.h2database:h2:1.4.199'
+
+	// AWS 의존성
+	implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
 }
 
 tasks.named('test') {

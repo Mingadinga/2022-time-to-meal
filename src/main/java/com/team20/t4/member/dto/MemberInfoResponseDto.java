@@ -13,17 +13,19 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class MemberInfoResponseDto {
-    private Long id;
+    private Long memberPk;
     private String memberId;
     private String name;
     private List<String> roles;
+    private String imgUrl;
 
-    public static MemberInfoResponseDto of(Member member){
+    public static MemberInfoResponseDto toDtoWithProfileImage(Member member, String imgUrl){
         return MemberInfoResponseDto.builder()
-                .id(member.getId())
+                .memberPk(member.getMemberPk())
                 .memberId(member.getMemberId())
                 .name(member.getName())
                 .roles(member.getRoles())
+                .imgUrl(imgUrl)
                 .build();
     }
 }

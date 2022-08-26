@@ -32,10 +32,10 @@ public class RefreshTokenService {
     }
 
     private void saveOrUpdateRefreshTokenValue(Member foundMember, String refreshTokenValue) throws AuthException {
-        if(checkRefreshTokenExists(foundMember.getId()))
+        if(checkRefreshTokenExists(foundMember.getMemberPk()))
             updateRefreshTokenIfRefreshTokenValueExists(foundMember, refreshTokenValue);
         else
-            saveRefreshTokenWithTokenValue(refreshTokenValue, foundMember.getId());
+            saveRefreshTokenWithTokenValue(refreshTokenValue, foundMember.getMemberPk());
     }
 
     private boolean checkRefreshTokenExists(Long userPk) {
@@ -43,14 +43,14 @@ public class RefreshTokenService {
     }
 
     private void updateRefreshTokenIfRefreshTokenValueExists(Member foundMember, String refreshTokenValue) {
-        if(refreshTokenRepository.existsByMemberPk(foundMember.getId())) {
+        if(refreshTokenRepository.existsByMemberPk(foundMember.getMemberPk())) {
             RefreshToken foundRefreshToken = findRefreshTokenByUserOrElseThrows(foundMember);
             updateRefreshTokenWithNewRefreshTokenValue(foundRefreshToken, refreshTokenValue);
         }
     }
 
     public RefreshToken findRefreshTokenByUserOrElseThrows(Member requestedUser) {
-        return refreshTokenRepository.findByMemberPk(requestedUser.getId())
+        return refreshTokenRepository.findByMemberPk(requestedUser.getMemberPk())
                 .orElseThrow(() -> new AuthException(AuthErrorCode.UNSAVED_REFRESH_TOKEN));
     }
 
