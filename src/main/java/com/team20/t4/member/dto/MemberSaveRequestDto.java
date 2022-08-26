@@ -6,16 +6,16 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotEmpty;
 import java.util.Collections;
 
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class MemberSaveRequestDto {
-    @NotNull(message = "아이디는 빈값일 수 없습니다.") private String memberId;
-    @NotNull(message = "이름은 빈값일 수 없습니다.") private String name;
-    @NotNull(message = "비밀번호는 빈값일 수 없습니다.") private String password;
+    @NotEmpty(message = "아이디는 빈값일 수 없습니다.") private String memberId;
+    @NotEmpty(message = "이름은 빈값일 수 없습니다.") private String name;
+    @NotEmpty(message = "비밀번호는 빈값일 수 없습니다.") private String password;
 
     public Member toEntityWithEncodedPassword(PasswordEncoder passwordEncoder){
         return Member.builder()
